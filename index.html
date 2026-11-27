@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StackBazaar</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand">StackBazaar</div>
+      <nav class="nav-actions">
+        <button id="btnCatalog" class="btn btn-ghost active">Catalog</button>
+        <button id="btnManage" class="btn btn-ghost">Manage Products</button>
+        <button id="btnOrders" class="btn btn-ghost">Orders</button>
+        <button id="btnAccount" class="btn btn-outline">Sign In</button>
+        <button id="btnCart" class="btn btn-ghost">Cart (<span id="cartCount">0</span>)</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <div id="bannerMessage" class="banner hidden"></div>
+
+    <!-- Catalog View (Ad placed between Nav and Search) -->
+    <section id="viewCatalog">
+      <div id="promoAd" class="ad-banner" aria-label="Promotional offer">
+        <div class="ad-content">
+          <span class="ad-tag">Ad</span>
+          <div class="ad-copy">
+            <strong>Curated Electronics, Lifestyle &amp; Workspace Gear</strong>
+            <span>Click any product to view details, delivery charge, and related items.</span>
+          </div>
+        </div>
+        <div class="ad-actions">
+          <button type="button" id="adBrowseBtn" class="btn btn-primary ad-cta">Browse Catalog</button>
+          <button type="button" id="closeAdBtn" class="ad-close" aria-label="Dismiss ad">✕</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input id="searchInput" type="text" placeholder="Search products..." class="input" autocomplete="off" />
+        <select id="categoryFilter" class="select">
+          <option value="All">All Categories</option>
+        </select>
+      </div>
+      <div id="productGrid" class="grid"></div>
+    </section>
+
+    <!-- Product Detail & Related Products View -->
+    <section id="viewProductDetail" class="hidden">
+      <div class="detail-topbar">
+        <button type="button" id="backToCatalogBtn" class="btn btn-outline">← Back to Catalog</button>
+      </div>
+      <div id="productDetailCard" class="card detail-card"></div>
+      <div class="related-section">
+        <h3>Related Products</h3>
+        <div id="relatedProductsGrid" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- Shopping Cart Page View -->
+    <section id="viewCart" class="hidden">
+      <div class="cart-page-header">
+        <div>
+          <h2>Shopping Cart</h2>
+          <p class="muted">Review your items, adjust quantities, and complete secure UPI checkout.</p>
+        </div>
+        <button type="button" id="continueShoppingBtn" class="btn btn-outline">← Continue Shopping</button>
+      </div>
+
+      <div class="cart-page-layout">
+        <div id="cartItems" class="stack"></div>
+
+        <aside class="card cart-summary-card">
+          <h3>Order Summary</h3>
+          <div class="cart-summary-line">
+            <span>Items Subtotal</span>
+            <span id="cartSubtotal">$0.00</span>
+          </div>
+          <div class="cart-summary-line">
+            <span>Delivery</span>
+            <span id="cartDelivery">$0.00</span>
+          </div>
+          <div class="cart-total">
+            <span>Total</span>
+            <strong id="cartTotal">$0.00</strong>
+          </div>
+
+          <button type="button" id="startCheckoutBtn" class="btn btn-primary full-width">Place Order</button>
+
+          <!-- Step 1: Shipping Address -->
+          <div id="checkoutStepAddress" class="checkout-step hidden">
+            <div class="checkout-step-header">
+              <strong>Step 1 of 3: Shipping Address</strong>
+            </div>
+            <textarea
+              id="shippingAddress"
+              rows="2"
+              class="input mb-sm"
+              placeholder="Enter full delivery address, landmark &amp; PIN code"
+              autocomplete="off"
+            ></textarea>
+            <div class="checkout-step-actions">
+              <button type="button" id="cancelCheckoutBtn" class="btn btn-ghost">Cancel</button>
+              <button type="button" id="toUpiStepBtn" class="btn btn-primary">Next: UPI Account →</button>
+            </div>
+          </div>
+
+          <!-- Step 2: UPI Account -->
+          <div id="checkoutStepUpi" class="checkout-step hidden">
+            <div class="checkout-step-header">
+              <strong>Step 2 of 3: UPI Account</strong>
+            </div>
+            <div id="savedUpiList" class="upi-presets">
+              <button type="button" class="upi-chip" data-upi-preset="customer@okicici">customer@okicici</button>
+              <button type="button" class="upi-chip" data-upi-preset="buyer@ybl">buyer@ybl</button>
+              <button type="button" class="upi-chip" data-upi-preset="shopper@paytm">shopper@paytm</button>
+            </div>
+            <input
+              id="upiIdInput"
+              type="text"
+              class="input mb-sm"
+              placeholder="Enter UPI ID (e.g. yourname@okaxis)"
+              autocomplete="off"
+            />
+            <p class="checkout-security-note">
+              Security notice: Never enter your UPI PIN here. Approval happens only inside your trusted UPI app.
+            </p>
+            <div class="checkout-step-actions">
+              <button type="button" id="backToAddressBtn" class="btn btn-outline">← Address</button>
+              <button type="button" id="toSecurityStepBtn" class="btn btn-primary">Next: Security →</button>
+            </div>
+          </div>
+
+          <!-- Step 3: Security Verification & Final Confirmation -->
+          <div id="checkoutStepSecurity" class="checkout-step hidden">
+            <div class="checkout-step-header">
+              <strong>Step 3 of 3: Security &amp; Confirm</strong>
+            </div>
+            <div class="checkout-review-box">
+              <div><span>Address:</span> <strong id="reviewAddress"></strong></div>
+              <div><span>UPI ID:</span> <strong id="reviewUpi"></strong></div>
+              <div><span>Payable Total:</span> <strong id="reviewTotal"></strong></div>
+            </div>
+            <label class="security-check-row">
+              <input id="securityConfirmCheck" type="checkbox" />
+              <span>I verified the recipient UPI ID and shipping address are accurate and safe.</span>
+            </label>
+            <div class="checkout-step-actions">
+              <button type="button" id="backToUpiBtn" class="btn btn-outline">← UPI</button>
+              <button type="button" id="checkoutBtn" class="btn btn-primary">Confirm &amp; Place Order</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Product Management View -->
+    <section id="viewManage" class="hidden">
+      <h2>Product Management</h2>
+      <p id="manageAuthHint" class="muted">Sign in first to add, edit, or delete products.</p>
+      <form id="productForm" class="card form-grid" autocomplete="off">
+        <div>
+          <label for="prodName">Product Name</label>
+          <input id="prodName" type="text" class="input" required placeholder="Enter product name" />
+        </div>
+        <div>
+          <label for="prodCategory">Category</label>
+          <input id="prodCategory" type="text" class="input" required placeholder="Enter category" />
+        </div>
+        <div>
+          <label for="prodPrice">Price</label>
+          <input id="prodPrice" type="number" step="0.01" min="0.01" class="input" required placeholder="Enter price" />
+        </div>
+        <div>
+          <label for="prodStock">Stock</label>
+          <input id="prodStock" type="number" min="0" class="input" required placeholder="Enter stock quantity" />
+        </div>
+        <div class="full-span">
+          <label for="prodImage">Image URL</label>
+          <input id="prodImage" type="url" class="input" placeholder="Enter image URL" />
+        </div>
+        <div class="full-span">
+          <label for="prodDesc">Description</label>
+          <textarea id="prodDesc" rows="2" class="input" placeholder="Enter product description"></textarea>
+        </div>
+        <div class="full-span form-buttons">
+          <button type="submit" id="saveProductBtn" class="btn btn-primary">Add Product</button>
+        </div>
+      </form>
+      <div id="manageList" class="stack"></div>
+    </section>
+
+    <!-- Orders View -->
+    <section id="viewOrders" class="hidden">
+      <h2>Your Orders</h2>
+      <div id="ordersList" class="stack"></div>
+    </section>
+
+    <!-- Account View (Centered 3D Page-Turn Flip Card + Anchor Switch Links + Eye Toggle) -->
+    <section id="viewAccount" class="hidden">
+      <div id="accountSignedOut" class="flip-scene">
+        <div id="authFlipCard" class="flip-card">
+
+          <!-- FRONT FACE: SIGN IN -->
+          <div class="card flip-face flip-front">
+            <div class="auth-header">
+              <h2>Sign In</h2>
+              <p class="muted">Enter your email and password to sign in.</p>
+            </div>
+            <form id="loginForm" class="auth-form" autocomplete="off">
+              <div class="field-group">
+                <label for="loginEmail">Email</label>
+                <input id="loginEmail" type="email" class="input" required placeholder="Enter email" />
+              </div>
+              <div class="field-group">
+                <label for="loginPassword">Password</label>
+                <div class="password-wrapper">
+                  <input id="loginPassword" type="password" class="input" required placeholder="Enter password" />
+                  <button type="button" class="toggle-password" data-target="loginPassword" aria-label="Show password">
+                    <svg class="icon-closed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 10c5.5 5 12.5 5 18 0" />
+                      <line x1="5" y1="12.5" x2="3.5" y2="16" />
+                      <line x1="9.5" y1="14.2" x2="8.8" y2="17.8" />
+                      <line x1="14.5" y1="14.2" x2="15.2" y2="17.8" />
+                      <line x1="19" y1="12.5" x2="20.5" y2="16" />
+                    </svg>
+                    <svg class="icon-open hidden" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="2" x2="12" y2="4.5" />
+                      <line x1="7.2" y1="3.4" x2="8.3" y2="5.6" />
+                      <line x1="16.8" y1="3.4" x2="15.7" y2="5.6" />
+                      <path d="M2 12c2.6-4.2 6.2-6.2 10-6.2s7.4 2 10 6.2c-2.6 4.2-6.2 6.2-10 6.2S4.6 16.2 2 12z" />
+                      <circle cx="12" cy="12" r="3.4" />
+                      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+                      <line x1="12" y1="19.5" x2="12" y2="22" />
+                      <line x1="7.2" y1="18.4" x2="8.3" y2="20.6" />
+                      <line x1="16.8" y1="18.4" x2="15.7" y2="20.6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary full-width auth-submit">Sign In</button>
+            </form>
+            <div class="auth-footer">
+              <p class="auth-switch-text">
+                Need an account?
+                <a href="#" id="flipToRegisterBtn" class="auth-link">Register →</a>
+              </p>
+            </div>
+          </div>
+
+          <!-- BACK FACE: REGISTER -->
+          <div class="card flip-face flip-back">
+            <div class="auth-header">
+              <h2>Register</h2>
+              <p class="muted">Create a new account to start.</p>
+            </div>
+            <form id="registerForm" class="auth-form" autocomplete="off">
+              <div class="field-group">
+                <label for="regName">Full Name</label>
+                <input id="regName" type="text" class="input" required placeholder="Enter full name" />
+              </div>
+              <div class="field-group">
+                <label for="regEmail">Email</label>
+                <input id="regEmail" type="email" class="input" required placeholder="Enter email" />
+              </div>
+              <div class="field-group">
+                <label for="regPassword">Password</label>
+                <div class="password-wrapper">
+                  <input id="regPassword" type="password" class="input" required minlength="6" placeholder="Enter password" />
+                  <button type="button" class="toggle-password" data-target="regPassword" aria-label="Show password">
+                    <svg class="icon-closed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 10c5.5 5 12.5 5 18 0" />
+                      <line x1="5" y1="12.5" x2="3.5" y2="16" />
+                      <line x1="9.5" y1="14.2" x2="8.8" y2="17.8" />
+                      <line x1="14.5" y1="14.2" x2="15.2" y2="17.8" />
+                      <line x1="19" y1="12.5" x2="20.5" y2="16" />
+                    </svg>
+                    <svg class="icon-open hidden" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="12" y1="2" x2="12" y2="4.5" />
+                      <line x1="7.2" y1="3.4" x2="8.3" y2="5.6" />
+                      <line x1="16.8" y1="3.4" x2="15.7" y2="5.6" />
+                      <path d="M2 12c2.6-4.2 6.2-6.2 10-6.2s7.4 2 10 6.2c-2.6 4.2-6.2 6.2-10 6.2S4.6 16.2 2 12z" />
+                      <circle cx="12" cy="12" r="3.4" />
+                      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+                      <line x1="12" y1="19.5" x2="12" y2="22" />
+                      <line x1="7.2" y1="18.4" x2="8.3" y2="20.6" />
+                      <line x1="16.8" y1="18.4" x2="15.7" y2="20.6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary full-width auth-submit">Register</button>
+            </form>
+            <div class="auth-footer">
+              <p class="auth-switch-text">
+                ← Already have an account?
+                <a href="#" id="flipToLoginBtn" class="auth-link">Sign In</a>
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="accountSignedIn" class="card hidden">
+        <h2>Account Profile</h2>
+        <p><strong>Name:</strong> <span id="profileName"></span></p>
+        <p><strong>Email:</strong> <span id="profileEmail"></span></p>
+        <button type="button" id="logoutBtn" class="btn btn-outline">Sign Out</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
